@@ -1,10 +1,10 @@
-from enum import Enum
 import logging
+from enum import Enum
 from typing import List, Union
-from typing_extensions import override
 
-from wyoming.info import AsrModel, TtsVoice, Attribution
 from openai import AsyncOpenAI
+from typing_extensions import override
+from wyoming.info import AsrModel, Attribution, TtsVoice
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -12,10 +12,11 @@ _LOGGER = logging.getLogger(__name__)
 class TtsVoiceModel(TtsVoice):
     """
     A subclass of TtsVoice from the Wyoming Protocol representing a text-to-speech voice with an associated model name.
-    
+
     Attributes:
         model_name (str): The name of the underlying text-to-speech model.
     """
+
     def __init__(self, model_name: str, *args, **kwargs):
         """
         Initializes a TtsVoiceModel instance.
@@ -28,7 +29,10 @@ class TtsVoiceModel(TtsVoice):
         super().__init__(*args, **kwargs)
         self.model_name = model_name
 
-def create_asr_models(stt_models: List[str], stt_url: str, languages: List[str]) -> List[AsrModel]:
+
+def create_asr_models(
+    stt_models: List[str], stt_url: str, languages: List[str]
+) -> List[AsrModel]:
     """
     Creates a list of ASR (Automatic Speech Recognition) models in the Wyoming Protocol format.
 
@@ -42,20 +46,22 @@ def create_asr_models(stt_models: List[str], stt_url: str, languages: List[str])
     """
     asr_models = []
     for model_name in stt_models:
-        asr_models.append(AsrModel(
-            name=model_name,
-            description=model_name,
-            attribution=Attribution(
-                name="OpenAI Wyoming Proxy",
-                url=stt_url
-            ),
-            installed=True,
-            languages=languages,
-            version=None
-        ))
+        asr_models.append(
+            AsrModel(
+                name=model_name,
+                description=model_name,
+                attribution=Attribution(name="OpenAI Wyoming Proxy", url=stt_url),
+                installed=True,
+                languages=languages,
+                version=None,
+            )
+        )
     return asr_models
 
-def create_tts_voices(tts_models: List[str], tts_voices: List[str], tts_url: str, languages: List[str]) -> List[TtsVoiceModel]:
+
+def create_tts_voices(
+    tts_models: List[str], tts_voices: List[str], tts_url: str, languages: List[str]
+) -> List[TtsVoiceModel]:
     """
     Creates a list of TTS (Text-to-Speech) voice models in the Wyoming Protocol format.
 
@@ -71,19 +77,19 @@ def create_tts_voices(tts_models: List[str], tts_voices: List[str], tts_url: str
     voices = []
     for model_name in tts_models:
         for voice in tts_voices:
-            voices.append(TtsVoiceModel(
-                name=voice,
-                description=f"{voice} ({model_name})",
-                model_name=model_name,
-                attribution=Attribution(
-                    name="OpenAI Wyoming Proxy",
-                    url=tts_url
-                ),
-                installed=True,
-                languages=languages,
-                version=None
-            ))
+            voices.append(
+                TtsVoiceModel(
+                    name=voice,
+                    description=f"{voice} ({model_name})",
+                    model_name=model_name,
+                    attribution=Attribution(name="OpenAI Wyoming Proxy", url=tts_url),
+                    installed=True,
+                    languages=languages,
+                    version=None,
+                )
+            )
     return voices
+
 
 def asr_model_to_string(asr_model: AsrModel) -> str:
     """
@@ -96,7 +102,7 @@ def asr_model_to_string(asr_model: AsrModel) -> str:
         str: A human-readable string representation of the ASR model.
     """
     return (
-        f"ASR Model:\n"
+        f"ASR Model\n"
         f"  Name: {asr_model.name}\n"
         f"  Description: {asr_model.description}\n"
         f"  Attribution: {asr_model.attribution.name} - {asr_model.attribution.url}\n"
@@ -104,6 +110,7 @@ def asr_model_to_string(asr_model: AsrModel) -> str:
         f"  Languages: {', '.join(asr_model.languages)}\n"
         f"  Version: {asr_model.version}"
     )
+
 
 def tts_voice_to_string(tts_voice_model: TtsVoiceModel) -> str:
     """
@@ -116,7 +123,7 @@ def tts_voice_to_string(tts_voice_model: TtsVoiceModel) -> str:
         str: A human-readable string representation of the TTS voice model.
     """
     return (
-        f"TTS Voice Model:\n"
+        f"TTS Voice Model\n"
         f"  Name: {tts_voice_model.name}\n"
         f"  Description: {tts_voice_model.description}\n"
         f"  Model Name: {tts_voice_model.model_name}\n"
@@ -126,9 +133,10 @@ def tts_voice_to_string(tts_voice_model: TtsVoiceModel) -> str:
         f"  Version: {tts_voice_model.version}"
     )
 
+
 # https://github.com/speaches-ai/speaches/issues/266
 # async def get_openai_models(
-#     api_key: str, 
+#     api_key: str,
 #     base_urls: Set[str]
 # ):
 # """
@@ -152,15 +160,18 @@ def tts_voice_to_string(tts_voice_model: TtsVoiceModel) -> str:
 #             except Exception as e:
 #                 logger.error("Failed to fetch OpenAI models: %s", e)
 
+
 class OpenAIBackend(Enum):
     OFFICIAL = 0
     SPEACHES = 1
     KOKORO_FASTAPI = 2
 
+
 class CustomAsyncOpenAI(AsyncOpenAI):
     """
     Custom implementation of OpenAI's AsyncOpenAI class to handle API key authentication being optional.
     """
+
     def __init__(self, *args, **kwargs):
         if "api_key" not in kwargs or not kwargs["api_key"]:
             kwargs["api_key"] = ""
@@ -177,7 +188,7 @@ class CustomAsyncOpenAI(AsyncOpenAI):
         if not self.api_key:
             del super_headers["Authorization"]
         return super_headers
-    
+
     # OpenAI
 
     async def list_openai_voices(self) -> List[str]:
@@ -185,10 +196,10 @@ class CustomAsyncOpenAI(AsyncOpenAI):
         Not official implemented by OpenAI, hard-coded.
         https://platform.openai.com/docs/guides/text-to-speech/voice-options
         """
-        return ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
+        return ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
 
     # Kokoro-FastAPI
-    
+
     async def _is_kokoro_fastapi(self) -> bool:
         """
         Checks if the backend is Kokoro-FastAPI by sending a request to /test
@@ -200,7 +211,7 @@ class CustomAsyncOpenAI(AsyncOpenAI):
             return response.json().get("status", None) == "ok"
         except Exception:
             return False
-        
+
     async def _list_kokoro_fastapi_voices(self) -> List[str]:
         """
         Fetches the available audio voices from the Kokoro-FastAPI /audio/voices endpoint.
@@ -208,7 +219,9 @@ class CustomAsyncOpenAI(AsyncOpenAI):
         Example: ["af_sky"]
         """
         if self.backend != OpenAIBackend.KOKORO_FASTAPI:
-            _LOGGER.debug("Skipping /audio/voices request because backend is not KOKORO_FASTAPI")
+            _LOGGER.debug(
+                "Skipping /audio/voices request because backend is not KOKORO_FASTAPI"
+            )
             return []
 
         try:
@@ -218,7 +231,7 @@ class CustomAsyncOpenAI(AsyncOpenAI):
         except Exception as e:
             _LOGGER.exception(e, "Failed to fetch /audio/voices")
             return []
-        
+
     # Speaches
 
     async def _is_speaches(self) -> bool:
@@ -232,7 +245,7 @@ class CustomAsyncOpenAI(AsyncOpenAI):
             return response.text == "OK"
         except Exception:
             return False
-        
+
     async def _list_speaches_voices(self, model_name: str) -> List[str]:
         """
         Fetches the available audio voices from the Speaches /audio/speech/voices endpoint.
@@ -240,21 +253,27 @@ class CustomAsyncOpenAI(AsyncOpenAI):
         Example: [{"model_id": "hexgrad/Kokoro-82M", "voice_id": "af_sky"}]
         """
         if self.backend != OpenAIBackend.SPEACHES:
-            _LOGGER.debug("Skipping /audio/speech/voices request because backend is not SPEACHES")
+            _LOGGER.debug(
+                "Skipping /audio/speech/voices request because backend is not SPEACHES"
+            )
             return []
 
         try:
-            response = await self._client.get("/audio/speech/voices", params={"model_id": model_name})
+            response = await self._client.get(
+                "/audio/speech/voices", params={"model_id": model_name}
+            )
             response.raise_for_status()
             result = response.json()
             return [voice["voice_id"] for voice in result]
         except Exception as e:
             _LOGGER.exception(e, "Failed to fetch /audio/speech/voices")
             return []
-        
+
     # Unified API
 
-    async def list_supported_voices(self, model_names: Union[str, List[str]], languages: List[str]) -> List[TtsVoiceModel]:
+    async def list_supported_voices(
+        self, model_names: Union[str, List[str]], languages: List[str]
+    ) -> List[TtsVoiceModel]:
         """
         Fetches the available voices via unofficial specs.
         Note: this is not the list of CONFIGURED voices.
@@ -275,12 +294,14 @@ class CustomAsyncOpenAI(AsyncOpenAI):
                 continue
 
             # Create TTS voices in Wyoming Protocol format
-            tts_voice_models.extend(create_tts_voices(
-                tts_models=[model_name],
-                tts_voices=tts_voices,
-                tts_url=str(self.base_url),
-                languages=languages
-            ))
+            tts_voice_models.extend(
+                create_tts_voices(
+                    tts_models=[model_name],
+                    tts_voices=tts_voices,
+                    tts_url=str(self.base_url),
+                    languages=languages,
+                )
+            )
         return tts_voice_models
 
     @classmethod
@@ -289,12 +310,12 @@ class CustomAsyncOpenAI(AsyncOpenAI):
         Automatically detects and returns an instance of OpenAI API client based on available endpoints.
         """
         client = cls(*args, **kwargs)
-        
+
         if await client._is_speaches():
             client.backend = OpenAIBackend.SPEACHES
         elif await client._is_kokoro_fastapi():
             client.backend = OpenAIBackend.KOKORO_FASTAPI
         else:
             client.backend = OpenAIBackend.OFFICIAL
-        
+
         return client
