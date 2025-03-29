@@ -103,7 +103,7 @@ async def main():
 
     args = parser.parse_args()
 
-    configure_logging(args.log_level)
+    configure_logging(args)
     _LOGGER = logging.getLogger(__name__)
 
     # Create clients and detect supported backend specializations
