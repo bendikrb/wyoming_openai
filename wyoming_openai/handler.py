@@ -277,7 +277,7 @@ class OpenAIEventHandler(AsyncEventHandler):
                 async with self._tts_client.audio.speech.with_streaming_response.create(
                     model=voice.model_name,
                     voice=requested_voice,
-                    input=synthesize.text,
+                    input=input_text,
                     instructions=instructions,
                     response_format="pcm",
                 ) as response:
