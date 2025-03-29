@@ -207,6 +207,7 @@ class CustomAsyncOpenAI(AsyncOpenAI):
             "nova",
             "sage",
             "shimmer",
+            "verse",
         ]
 
     # Kokoro-FastAPI
