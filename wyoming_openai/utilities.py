@@ -29,3 +29,19 @@ class NamedBytesIO(BytesIO):
             str: The name or filename associated with this byte stream.
         """
         return self._name
+
+
+def extract_instructions(text: str) -> tuple[str | None, str]:
+    """
+    Extracts instructions enclosed in square brackets from the beginning of text.
+    """
+    text = text.strip()
+
+    if text.startswith("["):
+        closing_bracket_index = text.find("]")
+        if closing_bracket_index != -1:
+            instructions = text[1:closing_bracket_index]
+            remaining_text = text[closing_bracket_index + 1 :].lstrip()
+
+            return instructions, remaining_text
+    return None, text

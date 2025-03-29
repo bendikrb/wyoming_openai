@@ -20,7 +20,7 @@ from wyoming.tts import Synthesize
 
 from . import __version__
 from .compatibility import CustomAsyncOpenAI, TtsVoiceModel
-from .utilities import NamedBytesIO
+from .utilities import NamedBytesIO, extract_instructions
 
 # TODO: Replace the _wav_buffer with a _pcm_buffer to hold the raw PCM file instead of encoding wav on the fly.
 
@@ -165,9 +165,16 @@ class OpenAIEventHandler(AsyncEventHandler):
 
             # Send to OpenAI for transcription
             async with self._client_lock:
-                result = await self._stt_client.audio.transcriptions.create(
-                    file=self._wav_buffer, model=self._current_asr_model.name
+                stream = await self._stt_client.audio.transcriptions.create(
+                    file=self._wav_buffer,
+                    model=self._current_asr_model.name,
+                    stream=True,
                 )
+                async for chunk in stream:
+                    if chunk.type == "transcript.text.delta":
+                        _LOGGER.debug(f"Transcription delta: {chunk.text}")
+                    if chunk.type == "transcript.text.done":
+                        result = chunk
 
             if result.text:
                 _LOGGER.info(f"Successfully transcribed: {result.text}")
@@ -209,6 +216,7 @@ class OpenAIEventHandler(AsyncEventHandler):
         """Get a TTS voice by name or None"""
         for program in self._wyoming_info.tts:
             for voice in program.voices:
+                voice: TtsVoiceModel
                 if not name or voice.name == name:
                     return voice
 
@@ -260,9 +268,18 @@ class OpenAIEventHandler(AsyncEventHandler):
                 self._log_unsupported_voice(requested_voice)
                 return False
 
+            instructions, input_text = extract_instructions(synthesize.text)
+            # Instructions is supported on gpt-4o-mini-tts only
+            if instructions is not None and voice.model_name not in ["gpt-4o-mini-tts"]:
+                instructions = None
+
             async with self._client_lock:
                 async with self._tts_client.audio.speech.with_streaming_response.create(
-                    model=voice.model_name, voice=requested_voice, input=synthesize.text
+                    model=voice.model_name,
+                    voice=requested_voice,
+                    input=synthesize.text,
+                    instructions=instructions,
+                    response_format="pcm",
                 ) as response:
 
                     # Send audio start with required audio parameters
@@ -308,5 +325,5 @@ class OpenAIEventHandler(AsyncEventHandler):
     async def stop(self) -> None:
         """Stop the handler and close the clients"""
         await super().stop()
-        self._stt_client.close()
-        self._tts_client.close()
+        await self._stt_client.close()
+        await self._tts_client.close()

@@ -17,11 +17,11 @@ from .compatibility import (
 from .handler import OpenAIEventHandler
 
 
-def configure_logging(level):
-    numeric_level = getattr(logging, level.upper(), None)
+def configure_logging(args):
+    numeric_level = getattr(logging, args.log_level.upper(), None)
     if not isinstance(numeric_level, int):
-        raise ValueError(f"Invalid log level: {level}")
-    logging.basicConfig(level=numeric_level)
+        raise ValueError(f"Invalid log level: {args.log_level}")
+    logging.basicConfig(level=numeric_level, format=args.log_format)
 
 
 async def main():
@@ -37,6 +37,9 @@ async def main():
         "--log-level",
         default=os.getenv("WYOMING_LOG_LEVEL", "INFO"),
         help="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
+    )
+    parser.add_argument(
+        "--log-format", default=logging.BASIC_FORMAT, help="Format for log messages"
     )
     parser.add_argument(
         "--languages",
@@ -60,7 +63,9 @@ async def main():
     parser.add_argument(
         "--stt-models",
         nargs="+",  # Use nargs to accept multiple values
-        default=os.getenv("STT_MODELS", "whisper-1").split(),
+        default=os.getenv(
+            "STT_MODELS", "whisper-1 gpt-4o-transcribe gpt-4o-mini-transcribe"
+        ).split(),
         help="List of STT model identifiers",
     )
 
@@ -79,7 +84,7 @@ async def main():
     parser.add_argument(
         "--tts-models",
         nargs="+",
-        default=os.getenv("TTS_MODELS", "tts-1 tts-1-hd").split(),
+        default=os.getenv("TTS_MODELS", "tts-1 tts-1-hd gpt-4o-mini-tts").split(),
         help="List of TTS model identifiers",
     )
     parser.add_argument(

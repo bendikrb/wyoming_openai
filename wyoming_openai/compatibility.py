@@ -196,7 +196,18 @@ class CustomAsyncOpenAI(AsyncOpenAI):
         Not official implemented by OpenAI, hard-coded.
         https://platform.openai.com/docs/guides/text-to-speech/voice-options
         """
-        return ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+        return [
+            "alloy",
+            "ash",
+            "ballad",
+            "coral",
+            "echo",
+            "fable",
+            "onyx",
+            "nova",
+            "sage",
+            "shimmer",
+        ]
 
     # Kokoro-FastAPI
 
